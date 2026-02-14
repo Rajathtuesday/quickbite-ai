@@ -12,10 +12,12 @@ from datetime import datetime
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
+from app.db import get_connection
 import json
 import os
+from app.db import init_db  
+from fastapi.responses import FileResponse
 
-import os 
 
 app = FastAPI(title="QuickBite Revenue AI", version="2.2")
 templates = Jinja2Templates(directory="app/templates")
@@ -30,6 +32,9 @@ def health():
 def healthz():
     return {"status": "healthy"}
 
+@app.on_event("startup")
+def startup():
+    init_db()
 
 @app.post("/v1/recommend")
 def recommend(
@@ -129,34 +134,26 @@ ORDERS_FILE = "logs/orders.jsonl"
 os.makedirs("logs", exist_ok=True)
 
 
+
 @app.post("/v1/order")
-def place_order(payload: dict):
+def place_order(req: OrderRequest):
 
-    restaurant_id = payload["restaurant_id"]
-    table_id = payload["table_id"]
-    dish_id = payload["dish_id"]
-    session_id = payload["session_id"]
+    conn = get_connection()
+    cur = conn.cursor()
 
-    order_entry = {
-        "timestamp": datetime.utcnow().isoformat(),
-        "restaurant_id": restaurant_id,
-        "table_id": table_id,
-        "dish_id": dish_id,
-        "session_id": session_id
-    }
+    cur.execute("""
+        INSERT INTO orders (restaurant_id, table_id, dish_id, session_id)
+        VALUES (?, ?, ?, ?)
+    """, (req.restaurant_id, req.table_id, req.dish_id, req.session_id))
 
-    with open(ORDERS_FILE, "a", encoding="utf-8") as f:
-        f.write(json.dumps(order_entry) + "\n")
+    conn.commit()
+    conn.close()
 
-    # WhatsApp number (for pilot)
-    whatsapp_number = "917899814912"  # replace with real number
-
-    message = f"Table {table_id} wants to order {dish_id}"
-    whatsapp_link = f"https://wa.me/{whatsapp_number}?text={message}"
+    whatsapp_url = f"https://wa.me/917899814912?text=Table {req.table_id} wants to order {req.dish_id}"
 
     return {
         "status": "order_logged",
-        "whatsapp_url": whatsapp_link
+        "whatsapp_url": whatsapp_url
     }
 
 
@@ -181,3 +178,18 @@ def menu_page(request: Request, restaurant_id: str, table_id: str):
         "restaurant_id": restaurant_id,
         "table_id": table_id
     })
+
+
+
+@app.get("/debug/download_db")
+def download_db():
+    return FileResponse("database.db", media_type="application/octet-stream", filename="database.db")
+
+
+@app.get("/owner/menu", response_class=HTMLResponse)
+def owner_menu_page(request: Request):
+    return templates.TemplateResponse("owner_menu.html", {"request": request})
+
+@app.get("/menu", response_class=HTMLResponse)
+def customer_menu(request: Request):
+    return templates.TemplateResponse("customer_menu.html", {"request": request})

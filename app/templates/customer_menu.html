@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu</title>
+</head>
+<body>
+
+<h2>Recommended Dishes</h2>
+
+<div id="results"></div>
+
+<script>
+
+async function loadRecommendations() {
+
+    const response = await fetch("/v1/recommend?mode=profit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            restaurant_id: "rest_001",
+            city: "bangalore",
+            session_id: "session_" + Math.random(),
+            answers: {
+                situation: "office_lunch",
+                craving: "spicy",
+                constraints: []
+            }
+        })
+    });
+
+    const data = await response.json();
+
+    let html = "";
+
+    data.top_picks.forEach(dish => {
+        html += `
+            <div>
+                <h3>${dish.name}</h3>
+                <button onclick="placeOrder('${dish.dish_id}')">Order</button>
+            </div>
+        `;
+    });
+
+    document.getElementById("results").innerHTML = html;
+}
+
+async function placeOrder(dish_id) {
+
+    await fetch("/v1/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            restaurant_id: "rest_001",
+            table_id: "5",
+            session_id: "test_session",
+            dish_id: dish_id
+        })
+    });
+
+    alert("Order placed! Check WhatsApp.");
+}
+
+loadRecommendations();
+
+</script>
+
+</body>
+</html>
