@@ -1,0 +1,79 @@
+{
+    "timestamp": "2026-02-13T18:39:17.731074",
+    "functional_tests": {
+        "click_top": [
+            {
+                "dish_id": "a_high_margin_creamy",
+                "name": "Creamy Paneer",
+                "score": 0.167,
+                "why": [
+                    "Optimized for click probability"
+                ]
+            },
+            {
+                "dish_id": "b_spicy_low_margin",
+                "name": "Spicy Dosa",
+                "score": 0.117,
+                "why": [
+                    "Optimized for click probability"
+                ]
+            }
+        ],
+        "profit_top": [
+            {
+                "dish_id": "a_high_margin_creamy",
+                "name": "Creamy Paneer",
+                "score": 20.032,
+                "why": [
+                    "Optimized for expected profit"
+                ]
+            },
+            {
+                "dish_id": "b_spicy_low_margin",
+                "name": "Spicy Dosa",
+                "score": 3.524,
+                "why": [
+                    "Optimized for expected profit"
+                ]
+            }
+        ]
+    },
+    "constraint_tests": {
+        "response": [
+            {
+                "dish_id": "b_spicy_low_margin",
+                "name": "Spicy Dosa",
+                "score": 3.524,
+                "why": [
+                    "Optimized for expected profit"
+                ]
+            }
+        ]
+    },
+    "margin_sensitivity_tests": {
+        "top_picks": [
+            {
+                "dish_id": "b_spicy_low_margin",
+                "name": "Spicy Dosa",
+                "score": 17.62,
+                "why": [
+                    "Optimized for expected profit"
+                ]
+            },
+            {
+                "dish_id": "a_high_margin_creamy",
+                "name": "Creamy Paneer",
+                "score": 1.669,
+                "why": [
+                    "Optimized for expected profit"
+                ]
+            }
+        ]
+    },
+    "stress_test": {
+        "requests": 300,
+        "success": 300,
+        "errors": 0,
+        "duration_sec": 15.19
+    }
+}

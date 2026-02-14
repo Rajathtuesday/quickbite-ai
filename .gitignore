@@ -9,11 +9,8 @@ quick/
 venv/
 .env
 
-# Logs
-logs/
 
-# Models
-models/
+
 
 # VS Code
 .vscode/
