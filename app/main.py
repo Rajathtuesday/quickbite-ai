@@ -18,6 +18,9 @@ app = FastAPI(title="QuickBite Revenue AI", version="2.1")
 def health():
     return {"status": "ok"}
 
+@app.get("/healthz")
+def healthz():
+    return {"status": "healthy"}
 
 
 @app.post("/v1/recommend")
