@@ -7,9 +7,12 @@ from app.feedback_logger import log_feedback
 from app.menu_store import save_menu, load_menu
 from pydantic import BaseModel
 from typing import List
+from fastapi.responses import JSONResponse
+from datetime import datetime
+import json
+import os 
 
-
-app = FastAPI(title="QuickBite Revenue AI", version="2.1")
+app = FastAPI(title="QuickBite Revenue AI", version="2.2")
 
 
 
@@ -111,3 +114,55 @@ def upload_menu(req: MenuUploadRequest):
         "total_items": len(menu_data)
     }
     
+    
+
+
+
+
+
+ORDERS_FILE = "logs/orders.jsonl"
+os.makedirs("logs", exist_ok=True)
+
+
+@app.post("/v1/order")
+def place_order(payload: dict):
+
+    restaurant_id = payload["restaurant_id"]
+    table_id = payload["table_id"]
+    dish_id = payload["dish_id"]
+    session_id = payload["session_id"]
+
+    order_entry = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "restaurant_id": restaurant_id,
+        "table_id": table_id,
+        "dish_id": dish_id,
+        "session_id": session_id
+    }
+
+    with open(ORDERS_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(order_entry) + "\n")
+
+    # WhatsApp number (for pilot)
+    whatsapp_number = "917899814912"  # replace with real number
+
+    message = f"Table {table_id} wants to order {dish_id}"
+    whatsapp_link = f"https://wa.me/{whatsapp_number}?text={message}"
+
+    return {
+        "status": "order_logged",
+        "whatsapp_url": whatsapp_link
+    }
+
+
+@app.get("/debug/orders")
+def debug_orders():
+    try:
+        with open("logs/orders.jsonl", "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return {
+                "total_orders": len(lines),
+                "last_5": [json.loads(l) for l in lines[-5:]]
+            }
+    except FileNotFoundError:
+        return {"total_orders": 0, "last_5": []}
