@@ -17,6 +17,7 @@ import json
 import os
 from app.db import init_db  
 from fastapi.responses import FileResponse
+from app.models import RecommendRequest, FeedbackRequest, OrderRequest
 
 
 app = FastAPI(title="QuickBite Revenue AI", version="2.2")
