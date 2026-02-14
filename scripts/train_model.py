@@ -1,118 +1,42 @@
-# import json
-# import os
-# import pandas as pd
-# from sklearn.linear_model import LogisticRegression
-# from sklearn.preprocessing import OneHotEncoder
-# from sklearn.compose import ColumnTransformer
-# from sklearn.pipeline import Pipeline
-# from sklearn.metrics import classification_report
-# import joblib
-
-# DATA_FILE = "logs/training_data.jsonl"
-# MODEL_FILE = "models/recommender_v1.pkl"
-
-# rows = []
-
-# # -----------------------------
-# # Load data
-# # -----------------------------
-# with open(DATA_FILE, "r", encoding="utf-8") as f:
-#     for line in f:
-#         rows.append(json.loads(line))
-
-# df = pd.DataFrame(rows)
-
-# # -----------------------------
-# # Target label
-# # -----------------------------
-# df["label"] = df["clicked"]
-
-# # -----------------------------
-# # Interaction feature
-# # -----------------------------
-# df["context_combo"] = df["situation"] + "_" + df["craving"]
-
-# # -----------------------------
-# # Features (NO RANK ANYMORE)
-# # -----------------------------
-# features = [
-#     "city",
-#     "context_combo",
-#     "dish_id"
-# ]
-
-# X = df[features]
-# y = df["label"]
-
-# # -----------------------------
-# # Preprocessing
-# # -----------------------------
-# categorical = ["city", "context_combo", "dish_id"]
-
-# preprocessor = ColumnTransformer(
-#     transformers=[
-#         ("cat", OneHotEncoder(handle_unknown="ignore"), categorical)
-#     ]
-# )
-
-# # -----------------------------
-# # Model
-# # -----------------------------
-# model = LogisticRegression(
-#     max_iter=1000,
-#     class_weight="balanced"
-# )
-
-# pipeline = Pipeline(
-#     steps=[
-#         ("preprocessor", preprocessor),
-#         ("model", model),
-#     ]
-# )
-
-# # -----------------------------
-# # Train
-# # -----------------------------
-# pipeline.fit(X, y)
-
-# # -----------------------------
-# # Evaluate
-# # -----------------------------
-# preds = pipeline.predict(X)
-# print(classification_report(y, preds))
-
-# # -----------------------------
-# # Save model
-# # -----------------------------
-# os.makedirs("models", exist_ok=True)
-# joblib.dump(pipeline, MODEL_FILE)
-# print(f"✅ Model saved to {MODEL_FILE}")
-# ================================================================
-import json
-import os
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import classification_report
 import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+import os
 
-DATA_FILE = "logs/training_data.jsonl"
-MODEL_FILE = "models/recommender_v2.pkl"
+DATA_PATH = "logs/training_data.jsonl"
+MODEL_PATH = "models/recommender_v2.pkl"
 
-rows = []
+print("Loading training data...")
 
-with open(DATA_FILE, "r", encoding="utf-8") as f:
-    for line in f:
-        rows.append(json.loads(line))
+df = pd.read_json(DATA_PATH, lines=True)
 
-df = pd.DataFrame(rows)
+print("Columns in dataset:", df.columns)
 
-y = df["clicked"]
+# -----------------------------
+# Determine target column
+# -----------------------------
+if "ordered" in df.columns:
+    target_col = "ordered"
+elif "clicked" in df.columns:
+    target_col = "clicked"
+else:
+    raise RuntimeError("No target column found (clicked/ordered missing).")
 
-categorical = ["city", "context_combo"]
-numeric = [
+print(f"Using target column: {target_col}")
+
+df["label"] = df[target_col]
+
+# -----------------------------
+# Feature Columns
+# -----------------------------
+categorical_features = ["city", "context_combo"]
+
+numeric_features = [
     "is_spicy",
     "is_creamy",
     "is_sweet",
@@ -123,36 +47,55 @@ numeric = [
     "is_north_indian",
     "is_street_food",
     "popularity",
-    "price_bucket"
+    "price_bucket",
 ]
 
-X = df[categorical + numeric]
+X = df[categorical_features + numeric_features]
+y = df["label"]
 
+# -----------------------------
+# Train/Test Split
+# -----------------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# -----------------------------
+# Preprocessing
+# -----------------------------
 preprocessor = ColumnTransformer(
     transformers=[
-        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical),
-        ("num", "passthrough", numeric),
-    ]
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features)
+    ],
+    remainder="passthrough"
 )
 
-model = LogisticRegression(
-    max_iter=2000,
-    class_weight="balanced"
-)
-
-pipeline = Pipeline(
+model = Pipeline(
     steps=[
         ("preprocessor", preprocessor),
-        ("model", model),
+        (RandomForestClassifier(
+    n_estimators=200,
+    random_state=42,
+    class_weight="balanced"
+)
+)
     ]
 )
 
-pipeline.fit(X, y)
+print("Training model...")
+model.fit(X_train, y_train)
 
-preds = pipeline.predict(X)
-print(classification_report(y, preds))
+# -----------------------------
+# Evaluation
+# -----------------------------
+y_pred = model.predict(X_test)
+print("\n=== MODEL PERFORMANCE ===")
+print(classification_report(y_test, y_pred))
 
+# -----------------------------
+# Save Model
+# -----------------------------
 os.makedirs("models", exist_ok=True)
-joblib.dump(pipeline, MODEL_FILE)
+joblib.dump(model, MODEL_PATH)
 
-print("✅ Model saved to models/recommender_v2.pkl")
+print(f"\n✅ Model saved to {MODEL_PATH}")

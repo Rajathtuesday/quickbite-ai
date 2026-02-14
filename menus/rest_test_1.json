@@ -1,0 +1,26 @@
+[
+  {
+    "dish_id": "a_high_margin_creamy",
+    "name": "Creamy Paneer",
+    "price": 300.0,
+    "margin": 120.0,
+    "tags": [
+      "veg",
+      "creamy",
+      "north_indian"
+    ],
+    "popularity": 0.5
+  },
+  {
+    "dish_id": "b_spicy_low_margin",
+    "name": "Spicy Dosa",
+    "price": 120.0,
+    "margin": 30.0,
+    "tags": [
+      "veg",
+      "spicy",
+      "south_indian"
+    ],
+    "popularity": 0.6
+  }
+]

@@ -7,9 +7,10 @@ LOG_FILE = os.path.join(LOG_DIR, "feedback.jsonl")
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
-def log_feedback(session_id, dish_id, action):
+def log_feedback(restaurant_id, session_id, dish_id, action):
     log_entry = {
         "timestamp": datetime.utcnow().isoformat(),
+        "restaurant_id": restaurant_id,
         "session_id": session_id,
         "dish_id": dish_id,
         "action": action  # "click" or "order"

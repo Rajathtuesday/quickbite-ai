@@ -1,0 +1,26 @@
+[
+  {
+    "dish_id": "r1_d1",
+    "name": "Masala Dosa",
+    "price": 120.0,
+    "margin": 40.0,
+    "tags": [
+      "veg",
+      "south_indian",
+      "spicy"
+    ],
+    "popularity": 0.9
+  },
+  {
+    "dish_id": "r1_d2",
+    "name": "Paneer Butter Masala",
+    "price": 260.0,
+    "margin": 80.0,
+    "tags": [
+      "veg",
+      "north_indian",
+      "creamy"
+    ],
+    "popularity": 0.7
+  }
+]

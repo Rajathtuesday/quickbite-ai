@@ -10,6 +10,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 def log_recommendation(request, recommendations):
     log_entry = {
         "timestamp": datetime.utcnow().isoformat(),
+        "restaurant_id": request.restaurant_id,
         "session_id": request.session_id,  # 🔴 ADD THIS
         "city": request.city,
         "situation": request.answers.situation,

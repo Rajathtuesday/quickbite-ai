@@ -9,12 +9,29 @@ class Answers(BaseModel):
 
 
 class RecommendRequest(BaseModel):
+    restaurant_id: str
     city: str
     session_id: str
     answers: Answers
 
 
 class FeedbackRequest(BaseModel):
+    restaurant_id: str
     session_id: str
     dish_id: str
-    action: str  # "click" or "order"
+    action: str  # click or order
+
+
+
+class DishUpload(BaseModel):
+    dish_id: str
+    name: str
+    price: float
+    margin: float
+    tags: List[str]
+    popularity: float
+
+
+class MenuUploadRequest(BaseModel):
+    restaurant_id: str
+    menu: List[DishUpload]

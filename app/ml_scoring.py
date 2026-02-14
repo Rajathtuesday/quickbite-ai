@@ -1,20 +1,16 @@
-import pandas as pd
 from app.ml_model import get_model
-from app.data import DISHES
+import pandas as pd
 
-dish_lookup = {d["dish_id"]: d for d in DISHES}
-
-def ml_score_dish(city, situation, craving, dish_id):
+def ml_score_dish(city, situation, craving, dish):
 
     model = get_model()
 
-    dish = dish_lookup[dish_id]
+    context_combo = situation + "_" + craving
     tags = dish["tags"]
 
     row = pd.DataFrame([{
         "city": city,
-        "context_combo": situation + "_" + craving,
-
+        "context_combo": context_combo,
         "is_spicy": int("spicy" in tags),
         "is_creamy": int("creamy" in tags),
         "is_sweet": int("sweet" in tags),
@@ -24,10 +20,9 @@ def ml_score_dish(city, situation, craving, dish_id):
         "is_south_indian": int("south_indian" in tags),
         "is_north_indian": int("north_indian" in tags),
         "is_street_food": int("street_food" in tags),
-
-        "popularity": dish["popularity"],
+        "popularity": dish.get("popularity", 0.5),
         "price_bucket": int(dish["price"] // 100),
     }])
 
     prob = model.predict_proba(row)[0][1]
-    return round(float(prob), 3)
+    return float(prob)
