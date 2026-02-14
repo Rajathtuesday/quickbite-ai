@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuickBite Menu</title>
+</head>
+<body>
+    <h2>Welcome to {{ restaurant_id }}</h2>
+    <h3>Table {{ table_id }}</h3>
+
+    <button onclick="loadRecommendations()">Get Recommendations</button>
+
+    <div id="results"></div>
+
+<script>
+function loadRecommendations() {
+
+    fetch("/v1/recommend?mode=profit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            restaurant_id: "{{ restaurant_id }}",
+            city: "bangalore",
+            session_id: "web_" + Date.now(),
+            answers: {
+                situation: "office_lunch",
+                craving: "spicy",
+                constraints: []
+            }
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        let html = "<h3>Top Picks</h3>";
+
+        data.top_picks.forEach(item => {
+            html += `
+                <div>
+                    <b>${item.name}</b> <br/>
+                    <button onclick="placeOrder('${item.dish_id}')">
+                        Order
+                    </button>
+                    <hr/>
+                </div>
+            `;
+        });
+
+        document.getElementById("results").innerHTML = html;
+    });
+}
+
+function placeOrder(dishId) {
+
+    fetch("/v1/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            restaurant_id: "{{ restaurant_id }}",
+            table_id: "{{ table_id }}",
+            session_id: "web_" + Date.now(),
+            dish_id: dishId
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        window.location.href = data.whatsapp_url;
+    });
+}
+</script>
+
+</body>
+</html>

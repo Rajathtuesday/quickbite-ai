@@ -9,11 +9,16 @@ from pydantic import BaseModel
 from typing import List
 from fastapi.responses import JSONResponse
 from datetime import datetime
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
 import json
+import os
+
 import os 
 
 app = FastAPI(title="QuickBite Revenue AI", version="2.2")
-
+templates = Jinja2Templates(directory="app/templates")
 
 
 
@@ -166,3 +171,13 @@ def debug_orders():
             }
     except FileNotFoundError:
         return {"total_orders": 0, "last_5": []}
+
+
+@app.get("/menu", response_class=HTMLResponse)
+def menu_page(request: Request, restaurant_id: str, table_id: str):
+
+    return templates.TemplateResponse("menu.html", {
+        "request": request,
+        "restaurant_id": restaurant_id,
+        "table_id": table_id
+    })
