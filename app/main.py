@@ -135,27 +135,37 @@ ORDERS_FILE = "logs/orders.jsonl"
 os.makedirs("logs", exist_ok=True)
 
 
+from app.menu_store import get_menu_for_restaurant
+from urllib.parse import quote
+
 
 @app.post("/v1/order")
 def place_order(req: OrderRequest):
 
-    conn = get_connection()
-    cur = conn.cursor()
+    menu = get_menu_for_restaurant(req.restaurant_id)
 
-    cur.execute("""
-        INSERT INTO orders (restaurant_id, table_id, dish_id, session_id)
-        VALUES (?, ?, ?, ?)
-    """, (req.restaurant_id, req.table_id, req.dish_id, req.session_id))
+    dish = next(
+        (d for d in menu if d["dish_id"] == req.dish_id),
+        None
+    )
 
-    conn.commit()
-    conn.close()
+    if not dish:
+        return {"error": "Dish not found"}
 
-    whatsapp_url = f"https://wa.me/917899814912?text=Table {req.table_id} wants to order {req.dish_id}"
+    dish_name = dish["name"]
+
+    message = f"Table {req.table_id} wants to order {dish_name}"
+    encoded_message = quote(message)
+
+    whatsapp_url = f"https://wa.me/917899814912?text={encoded_message}"
+
+    # log order (keep your logging code)
 
     return {
         "status": "order_logged",
         "whatsapp_url": whatsapp_url
     }
+
 
 
 @app.get("/debug/orders")
@@ -194,3 +204,74 @@ def owner_menu_page(request: Request):
 @app.get("/menu", response_class=HTMLResponse)
 def customer_menu(request: Request):
     return templates.TemplateResponse("customer_menu.html", {"request": request})
+
+from fastapi.responses import HTMLResponse
+from fastapi import Request
+
+@app.get("/order/success", response_class=HTMLResponse)
+def order_success(request: Request, dish_id: str):
+    return f"""
+    <html>
+    <head>
+        <title>Order Placed</title>
+    </head>
+    <body style="font-family: Arial; text-align:center; padding-top:50px;">
+        <h2>✅ Order Placed Successfully</h2>
+        <p>Your dish has been sent to the kitchen.</p>
+        <p><b>Dish ID:</b> {dish_id}</p>
+        <a href="/">Back to Menu</a>
+    </body>
+    </html>
+    """
+
+
+from fastapi import Form
+ 
+
+@app.get("/admin/login", response_class=HTMLResponse)
+def admin_login():
+    return """
+    <form method="post">
+        <h2>Admin Login</h2>
+        <input type="password" name="password" placeholder="Enter password"/>
+        <button type="submit">Login</button>
+    </form>
+    """
+
+@app.post("/admin/login")
+def admin_login_post(password: str = Form(...)):
+    if password == os.getenv("ADMIN_PASSWORD"):
+        return {"status": "ok", "redirect": "/admin/analytics"}
+    return {"error": "Invalid password"}
+
+
+from fastapi import Form
+import os
+
+@app.get("/admin/login", response_class=HTMLResponse)
+def admin_login():
+    return """
+    <form method="post">
+        <h2>Admin Login</h2>
+        <input type="password" name="password" placeholder="Enter password"/>
+        <button type="submit">Login</button>
+    </form>
+    """
+
+@app.post("/admin/login")
+def admin_login_post(password: str = Form(...)):
+    if password == os.getenv("ADMIN_PASSWORD"):
+        return {"status": "ok", "redirect": "/admin/analytics"}
+    return {"error": "Invalid password"}
+
+@app.get("/admin/menu", response_class=HTMLResponse)
+def admin_menu():
+    return """
+    <h2>Upload Menu</h2>
+    <form method="post" action="/v1/upload_menu">
+        Restaurant ID: <input name="restaurant_id"><br><br>
+        Paste JSON Menu:<br>
+        <textarea name="menu" rows="10" cols="50"></textarea><br><br>
+        <button type="submit">Upload</button>
+    </form>
+    """

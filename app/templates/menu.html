@@ -2,51 +2,115 @@
 <html>
 <head>
     <title>QuickBite Menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f7f7f7;
+        }
+
+        h2, h3 {
+            margin-bottom: 5px;
+        }
+
+        button {
+            padding: 10px 16px;
+            background: #111;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .order-btn {
+            margin-top: 10px;
+            background: #0a7cff;
+        }
+
+        .loading {
+            margin-top: 20px;
+            font-style: italic;
+            color: gray;
+        }
+    </style>
 </head>
 <body>
+
     <h2>Welcome to {{ restaurant_id }}</h2>
     <h3>Table {{ table_id }}</h3>
 
-    <button onclick="loadRecommendations()">Get Recommendations</button>
+    <br>
+    <button onclick="loadRecommendations()">🍽 Recommend For Me</button>
 
     <div id="results"></div>
 
 <script>
-function loadRecommendations() {
 
-    fetch("/v1/recommend?mode=profit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            restaurant_id: "{{ restaurant_id }}",
-            city: "bangalore",
-            session_id: "web_" + Date.now(),
-            answers: {
-                situation: "office_lunch",
-                craving: "spicy",
-                constraints: []
-            }
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
+const restaurantId = "{{ restaurant_id }}";
+const tableId = "{{ table_id }}";
+const sessionId = "web_" + Date.now();
 
-        let html = "<h3>Top Picks</h3>";
+async function loadRecommendations() {
 
-        data.top_picks.forEach(item => {
-            html += `
-                <div>
-                    <b>${item.name}</b> <br/>
-                    <button onclick="placeOrder('${item.dish_id}')">
-                        Order
-                    </button>
-                    <hr/>
-                </div>
-            `;
+    const container = document.getElementById("results");
+    container.innerHTML = "<p class='loading'>Finding best dishes for you...</p>";
+
+    try {
+        const res = await fetch("/v1/recommend?mode=profit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                restaurant_id: restaurantId,
+                city: "bangalore",
+                session_id: sessionId,
+                answers: {
+                    situation: "casual",
+                    craving: "spicy",
+                    constraints: []
+                }
+            })
         });
 
-        document.getElementById("results").innerHTML = html;
-    });
+        const data = await res.json();
+
+        container.innerHTML = "";
+
+        const title = document.createElement("h2");
+        title.innerText = "⭐ Recommended For You";
+        container.appendChild(title);
+
+        data.top_picks.forEach(dish => {
+
+            const card = document.createElement("div");
+            card.className = "card";
+
+            card.innerHTML = `
+                <h3>${dish.name}</h3>
+                <p>Why: ${dish.why[0]}</p>
+                <button class="order-btn" onclick="placeOrder('${dish.dish_id}')">
+                    Order Now
+                </button>
+            `;
+
+            container.appendChild(card);
+        });
+
+    } catch (error) {
+        container.innerHTML = "<p style='color:red;'>Something went wrong. Please try again.</p>";
+    }
 }
 
 function placeOrder(dishId) {
@@ -55,17 +119,21 @@ function placeOrder(dishId) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            restaurant_id: "{{ restaurant_id }}",
-            table_id: "{{ table_id }}",
-            session_id: "web_" + Date.now(),
+            restaurant_id: restaurantId,
+            table_id: tableId,
+            session_id: sessionId,
             dish_id: dishId
         })
     })
     .then(res => res.json())
     .then(data => {
         window.location.href = data.whatsapp_url;
+    })
+    .catch(() => {
+        alert("Order failed. Please try again.");
     });
 }
+
 </script>
 
 </body>
