@@ -18,6 +18,8 @@ import os
 from app.db import init_db  
 from fastapi.responses import FileResponse
 from app.models import RecommendRequest, FeedbackRequest, OrderRequest
+from app.menu_store import get_menu as get_menu_for_restaurant
+
 
 
 app = FastAPI(title="QuickBite Revenue AI", version="2.2")
