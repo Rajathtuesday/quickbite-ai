@@ -7,7 +7,7 @@ from app.models import FeedbackRequest
 from app.ml_scoring import ml_score_dish
 from app.scoring import score_dish
 from app.session_memory import boost_dish, get_boost
-from app.menu_store import get_menu as get_menu_for_restaurant
+
 
 
 app = FastAPI(title="QuickBite AI", version="0.1.0")
